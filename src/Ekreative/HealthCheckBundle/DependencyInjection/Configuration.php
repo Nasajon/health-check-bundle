@@ -17,13 +17,21 @@ class Configuration implements ConfigurationInterface
             // BC layer for symfony/config 4.1 and older
             $rootNode = $treeBuilder->root('ekreative_health_check');
         }
-
         $rootNode->children()
             ->arrayNode('redis')
                 ->prototype('scalar')->end()
             ->end()
             ->arrayNode('optional_redis')
                 ->prototype('scalar')->end()
+            ->end()
+            ->arrayNode('rabbitmq')
+                ->children()
+                    ->scalarNode('host')->end()
+                    ->scalarNode('port')->end()
+                    ->scalarNode('user')->end()
+                    ->scalarNode('password')->end()
+                    ->scalarNode('vhost')->end()
+                ->end()
             ->end()
             ->arrayNode('doctrine')
                 ->prototype('scalar')->end()
@@ -32,10 +40,9 @@ class Configuration implements ConfigurationInterface
                 ->prototype('scalar')->end()
             ->end()
             ->booleanNode('doctrine_enabled')
-                ->defaultTrue()
+                ->defaultTrue()->end()
             ->end()
-        ->end();
-
+            ;
         return $treeBuilder;
     }
 }

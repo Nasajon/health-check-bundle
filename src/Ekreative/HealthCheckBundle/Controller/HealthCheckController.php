@@ -6,6 +6,7 @@ use Doctrine\DBAL\Connection;
 use Symfony\Bridge\Doctrine\ManagerRegistry;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
+use GuzzleHttp\Client;
 
 class HealthCheckController
 {
@@ -33,14 +34,25 @@ class HealthCheckController
      * @var \Redis[]
      */
     private $optionalRedis;
+    
+    /**
+     * 
+     */
+    private $rabbitmq;
 
-    public function __construct(?ManagerRegistry $doctrine, array $connections, $optionalConnections, array $redis, array $optionalRedis)
+    public function __construct(ManagerRegistry $doctrine, array $connections, 
+    $optionalConnections, array $redis, array $optionalRedis
+    ,array $rabbitmq = null
+    )
     {
+// var_dump('const');die();
+
         $this->doctrine = $doctrine;
         $this->connections = $connections;
         $this->optionalConnections = $optionalConnections;
         $this->redis = $redis;
         $this->optionalRedis = $optionalRedis;
+        $this->rabbitmq = $rabbitmq;
     }
 
     /**
@@ -55,7 +67,6 @@ class HealthCheckController
         $required = [
             'app' => true,
         ];
-
         if ($this->doctrine) {
             $i = 0;
             $key = 'database';
@@ -107,6 +118,11 @@ class HealthCheckController
 
         restore_error_handler();
 
+        if($this->rabbitmq){
+            $check = $this->checkRabbitmqConnection($this->rabbitmq);
+            $data['rabbitmq'] = $check;
+        }
+
         $ok = array_reduce($required, function ($m, $v) {
             return $m && $v;
         }, true);
@@ -125,20 +141,45 @@ class HealthCheckController
             return false;
         }
     }
-
-    /**
-     * @param \Redis $redis
-     *
-     * @return bool
-     */
-    private function checkRedisConnection($redis)
-    {
-        try {
-            $redis->ping();
-
-            return true;
-        } catch (\Exception $e) {
-            return false;
+    
+        /**
+         * @param \Redis $redis
+         *
+         * @return bool
+         */
+        private function checkRedisConnection($redis)
+        {
+            try {
+                $redis->ping();
+    
+                return true;
+            } catch (\Exception $e) {
+                return false;
+            }
         }
-    }
+    
+        /**
+         * @param array $rabbitmq
+         *
+         * @return bool
+         */
+        private function checkRabbitmqConnection($rabbitmq)
+        {
+            try {
+                $client = new Client();
+                
+                $url = $rabbitmq['host'] .':'.$rabbitmq['port']. '/api/healthchecks/node';
+                
+                $response = $client->request('GET',$url, 
+                    ['auth' => [$rabbitmq['user'], $rabbitmq['password']]]);
+
+                if($response->getStatusCode() == 200){
+                    return true;
+                }else{
+                    return false;
+                }
+            } catch (\Exception $e) {
+                return false;
+            }
+        }
 }

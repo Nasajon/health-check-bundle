@@ -12,27 +12,33 @@ class EkreativeHealthCheckExtension extends Extension
 {
     public function load(array $configs, ContainerBuilder $container)
     {
+        
         $configuration = new Configuration();
         $config = $this->processConfiguration($configuration, $configs);
-
+        
         $args = [];
         if ($config['doctrine_enabled']) {
             $args[] = new Reference('doctrine', \Symfony\Component\DependencyInjection\ContainerInterface::NULL_ON_INVALID_REFERENCE);
         } else {
             $args[] = null;
         }
-
+        
         $args[] = $config['doctrine'];
         $args[] = $config['optional_doctrine'];
-
+        
         $args[] = array_map(function ($service) {
             return new Reference($service);
         }, $config['redis']);
-
+        
         $args[] = array_map(function ($service) {
             return new Reference($service);
         }, $config['optional_redis']);
 
+        
+        if(isset($config['rabbitmq'])){
+            $args[] = $config['rabbitmq'];
+        }
+        
         $def = new Definition(HealthCheckController::class, $args);
         $def->addTag('controller.service_arguments');
 

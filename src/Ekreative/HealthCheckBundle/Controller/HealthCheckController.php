@@ -119,8 +119,8 @@ class HealthCheckController
         restore_error_handler();
 
         if($this->rabbitmq){
-            $check = $this->checkRabbitmqConnection($this->rabbitmq);
-            $data['rabbitmq'] = $check;
+            $check = $this->checkRabbitmqConnection($this->rabbitmq);            
+            $data['rabbitmq'] = $required["rabbitmq"] = $check;
         }
 
         $ok = array_reduce($required, function ($m, $v) {

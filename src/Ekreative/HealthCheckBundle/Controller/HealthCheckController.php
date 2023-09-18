@@ -168,7 +168,7 @@ class HealthCheckController
             try {
                 $client = new Client();
                 
-                $url = $rabbitmq['host'] .':'.$rabbitmq['port']. '/api/healthchecks/node';
+                $url = $rabbitmq['host'].':'.$rabbitmq['port']. '/api/healthchecks/node';
                 
                 $response = $client->request('GET',$url, 
                     ['auth' => [$rabbitmq['user'], $rabbitmq['password']]]);

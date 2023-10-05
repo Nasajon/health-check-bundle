@@ -167,17 +167,21 @@ class HealthCheckController
         {
             try {
                 $client = new Client();
-                
-                $url = $rabbitmq['host'] .':'.$rabbitmq['port']. '/api/healthchecks/node';
-                
-                $response = $client->request('GET',$url, 
-                    ['auth' => [$rabbitmq['user'], $rabbitmq['password']]]);
 
-                if($response->getStatusCode() == 200){
-                    return true;
-                }else{
-                    return false;
+                $tentativa = 5;
+
+                while($tentativa--){
+                    $url = $rabbitmq['host'].':'.$rabbitmq['port']. '/api/healthchecks/node';
+
+                    $response = $client->request('GET', $url, [
+                        'auth' => [$rabbitmq['user'], $rabbitmq['password']],'timeout' => 3,
+                    ]);
+
+                    if($response->getStatusCode() == 200){
+                        return true;
+                    }
                 }
+                return false;
             } catch (\Exception $e) {
                 return false;
             }

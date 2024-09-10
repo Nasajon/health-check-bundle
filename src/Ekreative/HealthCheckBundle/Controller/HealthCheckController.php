@@ -54,10 +54,8 @@ class HealthCheckController
         $this->optionalRedis = $optionalRedis;
         $this->rabbitmq = $rabbitmq;
     }
-
-    /**
-     * @Route("/healthcheck", name="health-check", methods={"GET"})
-     */
+    
+    #[Route(path: "/healthcheck", name: "health-check", methods:['GET'])]
     public function healthCheckAction()
     {
         $data = [
@@ -136,7 +134,7 @@ class HealthCheckController
     private function checkDoctrineConnection(Connection $connection)
     {
         try {
-            return $connection->ping();
+            return (bool) $connection->executeQuery('SELECT 1');
         } catch (\Exception $e) {
             return false;
         }
@@ -167,21 +165,17 @@ class HealthCheckController
         {
             try {
                 $client = new Client();
+                
+                $url = $rabbitmq['host'] .':'.$rabbitmq['port']. '/api/healthchecks/node';
+                
+                $response = $client->request('GET',$url, 
+                    ['auth' => [$rabbitmq['user'], $rabbitmq['password']]]);
 
-                $tentativa = 5;
-
-                while($tentativa--){
-                    $url = $rabbitmq['host'].':'.$rabbitmq['port']. '/api/healthchecks/node';
-
-                    $response = $client->request('GET', $url, [
-                        'auth' => [$rabbitmq['user'], $rabbitmq['password']],'timeout' => 3,
-                    ]);
-
-                    if($response->getStatusCode() == 200){
-                        return true;
-                    }
+                if($response->getStatusCode() == 200){
+                    return true;
+                }else{
+                    return false;
                 }
-                return false;
             } catch (\Exception $e) {
                 return false;
             }
